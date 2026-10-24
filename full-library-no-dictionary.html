@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fixate v1.76</title>
+<title>Fixate v1.77</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
@@ -1276,7 +1276,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <button class="icon-btn js-back" title="Edit text">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
     </button>
-    <span class="app-title">Fixate <i>v1.76</i></span>
+    <span class="app-title">Fixate <i>v1.77</i></span>
     <div class="pos"><span class="js-pg" hidden></span><b class="js-pos-now">1</b><span>/</span><span class="js-pos-total">0</span></div>
   </div>
   <div class="drawer-head">
@@ -1731,10 +1731,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       <div class="gh">Word highlight</div>
       <div id="emphOpts" class="sub disabled">
         <div class="field">
-          <div class="fl"><label>Multi-word lines</label></div>
+          <div class="fl"><label>Word highlight</label></div>
           <div class="seg" id="riseWordSeg">
-            <button data-risewordfocus="off">Line at once</button>
-            <button data-risewordfocus="on" class="on amber">Word by word</button>
+            <button data-risewordfocus="off">Off</button>
+            <button data-risewordfocus="on" class="on amber">On</button>
           </div>
         </div>
         <div id="emphMain" class="sub">
@@ -1922,7 +1922,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </div>
         </div>
         </div>
-        <p class="hint">Rise mode only, when Words per flash is 2 or more. Word by word keeps each line in place and highlights its words one at a time — longer or more complex words still get more time, same as a single-word flash — then scrolls on once the whole line has had its turn. Line at once shows the whole line together, the way earlier versions did. Rest of the line: Bright lights up the whole line when it reaches the anchor; Dimmed leaves it at the same brightness as the lines around it, so only the word being read stands out — at full brightness, plus whatever colour, bold or box you've set (with colour off it shows in your normal text colour).</p>
+        <p class="hint">Rise mode only. Word highlight On marks the word being read with the colour, bold, box and glow set below, at any number of words per line. With 2 or more words per line it keeps the line in place and highlights its words one at a time — longer or more complex words still get more time, same as a single-word flash — then scrolls on once the whole line has had its turn. Off shows each line plainly and all at once, the way earlier versions did. Rest of the line: Bright lights up the whole line when it reaches the anchor; Dimmed leaves it at the same brightness as the lines around it, so only the word being read stands out — at full brightness, plus whatever colour, bold or box you've set (with colour off it shows in your normal text colour).</p>
         <p class="hint">Colour strength blends the highlight colour into your normal text colour: 100% is the full colour, and down near 5% it is barely a tint. The box sits behind the highlighted word and follows it from word to word. Padding pushes every side of the box out from the word. Box alignment decides which edges stay put: the centre square keeps the box centred on the word, bottom-middle lines the box's bottom edge up with the bottom of the text so padding only grows it upwards and sideways, top-left pins the top and left edges, and so on. Slide between words sets how long the box takes to travel to the next word — 0 jumps straight there. Lingering glow lets the highlight fade off the words you've just read instead of vanishing, and Word glow and Box glow are set separately. Word glow lets the word's colour and brightness ease back to normal (bold snaps off). Box glow leaves a copy of the box (fill, and border if it's on) behind; it only shows when the box is on. Each drops straight to its starts-at level, then fades out over its own time, and as many words as that time covers can be fading at once — 50% over 200 ms is a soft afterimage, 100% over 100 ms a quick full-strength flicker.</p>
       </div>
     </div>
@@ -4217,7 +4217,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const sp=scrubSpans[riseEmphasisIdx];
     if(sp){ styleEmSpan(sp); placeEmBox(sp, true); }
   }
-  function riseWordFocusActive(){ return cfg.mode==='rise' && cfg.riseWordFocus && chunkN()>1; }
+  function riseWordFocusActive(){ return cfg.mode==='rise' && cfg.riseWordFocus; }
   // How far between this word's slot and the next the column should sit, given how
   // much of the beat has elapsed. Continuous drifts the whole beat; Step keeps the
   // focus word parked on the anchor and slides only at the end.
