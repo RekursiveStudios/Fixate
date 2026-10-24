@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fixate v1.74</title>
+<title>Fixate v1.75</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
@@ -1276,7 +1276,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <button class="icon-btn js-back" title="Edit text">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
     </button>
-    <span class="app-title">Fixate <i>v1.74</i></span>
+    <span class="app-title">Fixate <i>v1.75</i></span>
     <div class="pos"><span class="js-pg" hidden></span><b class="js-pos-now">1</b><span>/</span><span class="js-pos-total">0</span></div>
   </div>
   <div class="drawer-head">
@@ -4054,34 +4054,18 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   // Colour strength: 0 = the normal text colour, 1 = the full highlight colour.
   function mixHex(a,b,t){ const A=hexRgb(a), B=hexRgb(b); return 'rgb('+A.map((v,k)=>Math.round(v+(B[k]-v)*t)).join(',')+')'; }
   function rgbaHex(h,a){ const c=hexRgb(h); return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')'; }
-  function unstyleEmSpan(i, linger){
+  function unstyleEmSpan(i){
     const sp=(i!=null)&&scrubSpans[i];
     if(!sp) return;
-    clearTimeout(sp.__fadeT); sp.style.removeProperty('transition');
     sp.style.fontWeight=''; sp.style.color='';
-    let target=null;
     if(cfg.mode==='rise'){                      // drop back to whatever its line says it should be
       const keep=riseEmphasisIdx; riseEmphasisIdx=null;
       const f=scrubSpans.__focus!==undefined ? scrubSpans.__focus : index;
-      const s0=chunkStart(f); target=riseOpacity(i, s0, s0+chunkLenAt(f)-1);
-      sp.style.opacity=String(target);
+      const s0=chunkStart(f); sp.style.opacity=String(riseOpacity(i, s0, s0+chunkLenAt(f)-1));
       riseEmphasisIdx=keep;
-    }
-    // Word glows: start part-way back towards the highlight, then ease to normal.
-    const start=Math.max(0,Math.min(100,cfg.emTrailStart))/100, ms=Math.max(0,cfg.emTrailMs);
-    if(linger && cfg.emTrail && cfg.emTrailText && start>0 && ms>0 && !reduceMotion && target!=null){
-      sp.style.opacity=String(target+(1-target)*start);
-      if(cfg.emText) sp.style.color=mixHex(cfg.fg, cfg.emColor, start*Math.max(0,Math.min(100,cfg.emStrength))/100);
-      void sp.offsetWidth;
-      // the stage turns span transitions off with !important, so this one has to be too
-      sp.style.setProperty('transition', 'color '+ms+'ms linear, opacity '+ms+'ms linear', 'important');
-      sp.style.opacity=String(target);
-      if(cfg.emText) sp.style.color=cfg.fg;
-      sp.__fadeT=setTimeout(()=>{ if(scrubSpans[i]===sp && riseEmphasisIdx!==i){ sp.style.removeProperty('transition'); sp.style.color=''; } }, ms+60);
     }
   }
   function styleEmSpan(sp){
-    clearTimeout(sp.__fadeT); sp.style.removeProperty('transition');
     sp.style.opacity='1';
     sp.style.fontWeight = cfg.emBold ? '700' : '';
     sp.style.color = cfg.emText ? mixHex(cfg.fg, cfg.emColor, Math.max(0,Math.min(100,cfg.emStrength))/100) : '';
@@ -4102,21 +4086,72 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     const sp=scrubSpans[riseEmphasisIdx], b=emBoxEl(false);
     if(sp && b && b.__sig!==emSig(sp)) placeEmBox(sp, true);
   }
+  // ---------- Lingering glow ----------
+  // Fades are tracked by word index, not by element, and re-applied every frame:
+  // Rise rebuilds its window every line or two, which would otherwise cut them
+  // short. Any number of words can be fading at once.
+  const emFades=new Map();   // word index -> {t0, ms, start}
+  const emGhosts=[];         // box copies: {i, dx, dy, w, h, css, t0, ms, start, el}
+  let emFadeRaf=null;
+  function emGlowParams(){ return { start:Math.max(0,Math.min(100,cfg.emTrailStart))/100, ms:Math.max(0,cfg.emTrailMs) }; }
+  function startWordFade(i){
+    const {start,ms}=emGlowParams();
+    if(i==null || !cfg.emTrail || !cfg.emTrailText || start<=0 || ms<=0 || reduceMotion) return;
+    emFades.set(i, {t0:performance.now(), ms, start});
+    kickEmFades();
+  }
   // Leave a fading copy of the box on the word it is leaving.
-  function spawnEmGhost(){
-    if(!cfg.emBox || !cfg.emTrail || !cfg.emTrailBox) return;
-    const b=emBoxEl(false);
-    if(!b || b.style.opacity!=='1' || !b.parentNode) return;
-    const start=Math.max(0,Math.min(100,cfg.emTrailStart))/100, ms=Math.max(0,cfg.emTrailMs);
-    if(start<=0 || ms<=0) return;
-    const g=b.cloneNode(false);
-    g.classList.add('em-ghost'); g.__sig=null;
-    g.style.transition='none'; g.style.opacity=String(start);
-    b.parentNode.insertBefore(g, b);
-    void g.offsetWidth;                        // commit the starting opacity before fading
-    g.style.transition='opacity '+ms+'ms linear';
-    g.style.opacity='0';
-    setTimeout(()=>g.remove(), ms+60);
+  function spawnEmGhost(i){
+    if(i==null || !cfg.emBox || !cfg.emTrail || !cfg.emTrailBox || reduceMotion) return;
+    const {start,ms}=emGlowParams(); if(start<=0 || ms<=0) return;
+    const b=emBoxEl(false), sp=scrubSpans[i], fr=frames[curFrame];
+    if(!b || !sp || b.style.opacity!=='1') return;
+    const fR=fr.getBoundingClientRect(), r=sp.getBoundingClientRect();
+    // the box's own left/top are where it was sent, even if it's still sliding there
+    emGhosts.push({ i, dx:parseFloat(b.style.left)-(r.left-fR.left), dy:parseFloat(b.style.top)-(r.top-fR.top),
+      w:b.style.width, h:b.style.height,
+      css:{ background:b.style.background, border:b.style.border, borderRadius:b.style.borderRadius, boxShadow:b.style.boxShadow },
+      t0:performance.now(), ms, start, el:null });
+    kickEmFades();
+  }
+  function tickEmFades(){
+    const now=performance.now();
+    if(emFades.size){
+      const f0=scrubSpans.__focus!==undefined ? scrubSpans.__focus : index;
+      const s0=chunkStart(f0), last=s0+chunkLenAt(f0)-1;
+      const str=Math.max(0,Math.min(100,cfg.emStrength))/100;
+      for(const [i,e] of emFades){
+        if(i===riseEmphasisIdx){ emFades.delete(i); continue; }
+        const k=Math.min(1,(now-e.t0)/e.ms), sp=scrubSpans[i];
+        if(!sp){ if(k>=1) emFades.delete(i); continue; }
+        const target = cfg.mode==='rise' ? riseOpacity(i, s0, last) : 1;
+        if(k>=1){ sp.style.opacity=String(target); sp.style.color=''; emFades.delete(i); continue; }
+        const a=e.start*(1-k);
+        sp.style.opacity=String(target+(1-target)*a);
+        sp.style.color = cfg.emText ? mixHex(cfg.fg, cfg.emColor, a*str) : '';
+      }
+    }
+    const fr=frames&&frames[curFrame];
+    for(let n=emGhosts.length-1;n>=0;n--){
+      const g=emGhosts[n], k=(now-g.t0)/g.ms;
+      if(k>=1 || cfg.mode!=='rise'){ if(g.el) g.el.remove(); emGhosts.splice(n,1); continue; }
+      const sp=scrubSpans[g.i];
+      if(!sp || !fr){ if(g.el) g.el.style.opacity='0'; continue; }
+      if(!g.el || g.el.parentNode!==fr){        // window was rebuilt: put the copy back
+        if(g.el) g.el.remove();
+        g.el=document.createElement('div'); g.el.className='em-box em-ghost';
+        Object.assign(g.el.style, g.css); g.el.style.width=g.w; g.el.style.height=g.h; g.el.style.transition='none';
+        fr.insertBefore(g.el, fr.firstChild);
+      }
+      const fR=fr.getBoundingClientRect(), r=sp.getBoundingClientRect();
+      g.el.style.left=(r.left-fR.left+g.dx)+'px'; g.el.style.top=(r.top-fR.top+g.dy)+'px';
+      g.el.style.opacity=String(g.start*(1-k));
+    }
+  }
+  function kickEmFades(){
+    if(emFadeRaf) return;
+    const loop=()=>{ tickEmFades(); emFadeRaf=(emFades.size||emGhosts.length) ? requestAnimationFrame(loop) : null; };
+    emFadeRaf=requestAnimationFrame(loop);
   }
   function hideEmBox(){ const b=emBoxEl(false); if(b){ b.style.transition='none'; b.style.opacity='0'; } }
   function placeEmBox(sp, instant){
@@ -4146,12 +4181,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
   function setRiseEmphasis(i){
     if(i===riseEmphasisIdx) return;
-    unstyleEmSpan(riseEmphasisIdx, true);     // leave the box showing so it can slide across
+    const prev=riseEmphasisIdx;
+    spawnEmGhost(prev); startWordFade(prev);
+    unstyleEmSpan(prev);                       // leave the box showing so it can slide across
     riseEmphasisIdx=null;
+    emFades.delete(i);
     const sp=scrubSpans[i];
     if(!sp){ hideEmBox(); return; }
     styleEmSpan(sp); riseEmphasisIdx=i;
-    spawnEmGhost();
     placeEmBox(sp, false);
   }
   // A highlight setting changed: restyle the word that holds it right now.
@@ -4204,15 +4241,19 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         D=cycleMs();
       }
       if(advanced){
+        if(riseWordFocusActive() && riseEmphasisIdx!=null){   // before a rebuild can throw the old word away
+          spawnEmGhost(riseEmphasisIdx); startWordFade(riseEmphasisIdx);
+        }
         ensureFlowWin(index);
         setScrubFocus(index, true);
-        unstyleEmSpan(riseEmphasisIdx, true); riseEmphasisIdx=null;   // box stays, so it can glide/glow into the new line
+        unstyleEmSpan(riseEmphasisIdx); riseEmphasisIdx=null;   // box stays, so it can glide/glow into the new line
         setPos(index+1); progBar.style.width=((index+1)/words.length*100)+'%'; updateShuttle();
       } else if(cfg.mode==='rise' && cfg.riseDimMode==='fade'){
         paintRiseFade();
       }
       if(riseWordFocusActive()){ setRiseEmphasis(chunkStart(index) + wordAtElapsed(index, flowAcc)); keepEmBoxFitted(); }
       else if(riseEmphasisIdx!=null) clearRiseEmphasis();
+      if(emFades.size || emGhosts.length) tickEmFades();   // after anything above that repaints opacity
       const next=index+chunkLenAt(index);
       const a=Lmap[index], b=(Lmap[next]!==undefined?Lmap[next]:a);
       if(a!==undefined){
