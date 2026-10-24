@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fixate v1.73</title>
+<title>Fixate v1.74</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
@@ -1276,7 +1276,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <button class="icon-btn js-back" title="Edit text">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
     </button>
-    <span class="app-title">Fixate <i>v1.73</i></span>
+    <span class="app-title">Fixate <i>v1.74</i></span>
     <div class="pos"><span class="js-pg" hidden></span><b class="js-pos-now">1</b><span>/</span><span class="js-pos-total">0</span></div>
   </div>
   <div class="drawer-head">
@@ -1860,6 +1860,22 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         </div>
         </div>
         <div class="field">
+          <div class="fl"><label>Drop shadow</label></div>
+          <div class="seg" id="emShadowSeg">
+            <button data-emshadow="off" class="on amber">Off</button>
+            <button data-emshadow="on">On</button>
+          </div>
+        </div>
+        <div class="field">
+          <div class="fl"><label>Slide between words</label><span class="v" id="emSlideVal">80 ms</span></div>
+          <div class="range-row">
+            <input type="range" id="emSlide" min="0" max="300" step="10" value="80">
+            <input type="number" class="v-edit" id="emSlideEdit" step="10" value="80">
+          </div>
+        </div>
+        </div>
+        <p class="sub-label">Lingering glow</p>
+        <div class="field">
           <div class="fl"><label>Lingering glow</label></div>
           <div class="seg" id="emTrailSeg">
             <button data-emtrail="off" class="on amber">Off</button>
@@ -1867,6 +1883,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           </div>
         </div>
         <div id="emTrailOpts" class="sub disabled">
+        <div class="field">
+          <label class="pg-trim" style="margin-top:2px"><input type="checkbox" id="emTrailBox" checked> <span>Box glows</span></label>
+          <label class="pg-trim" style="margin-top:2px"><input type="checkbox" id="emTrailText"> <span>Word glows</span></label>
+        </div>
         <div class="field">
           <div class="fl"><label>Glow starts at</label><span class="v" id="emTrailStartVal">50%</span></div>
           <div class="range-row">
@@ -1882,24 +1902,9 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           </div>
         </div>
         </div>
-        <div class="field">
-          <div class="fl"><label>Drop shadow</label></div>
-          <div class="seg" id="emShadowSeg">
-            <button data-emshadow="off" class="on amber">Off</button>
-            <button data-emshadow="on">On</button>
-          </div>
-        </div>
-        <div class="field">
-          <div class="fl"><label>Slide between words</label><span class="v" id="emSlideVal">80 ms</span></div>
-          <div class="range-row">
-            <input type="range" id="emSlide" min="0" max="300" step="10" value="80">
-            <input type="number" class="v-edit" id="emSlideEdit" step="10" value="80">
-          </div>
-        </div>
-        </div>
         </div>
         <p class="hint">Rise mode only, when Words per flash is 2 or more. Word by word keeps each line in place and highlights its words one at a time — longer or more complex words still get more time, same as a single-word flash — then scrolls on once the whole line has had its turn. Line at once shows the whole line together, the way earlier versions did. Rest of the line: Bright lights up the whole line when it reaches the anchor; Dimmed leaves it at the same brightness as the lines around it, so only the word being read stands out — at full brightness, plus whatever colour, bold or box you've set (with colour off it shows in your normal text colour).</p>
-        <p class="hint">Colour strength blends the highlight colour into your normal text colour: 100% is the full colour, and down near 5% it is barely a tint. The box sits behind the highlighted word and follows it from word to word. Padding pushes every side of the box out from the word. Box alignment decides which edges stay put: the centre square keeps the box centred on the word, bottom-middle lines the box's bottom edge up with the bottom of the text so padding only grows it upwards and sideways, top-left pins the top and left edges, and so on. Slide between words sets how long the box takes to travel to the next word — 0 jumps straight there. Lingering glow leaves a copy of the box (fill, and border if it's on) behind on the word you just read: it drops straight to Glow starts at, then fades to nothing over Glow fades over — 50% over 200 ms is a soft afterimage, 100% over 100 ms a quick full-strength flicker.</p>
+        <p class="hint">Colour strength blends the highlight colour into your normal text colour: 100% is the full colour, and down near 5% it is barely a tint. The box sits behind the highlighted word and follows it from word to word. Padding pushes every side of the box out from the word. Box alignment decides which edges stay put: the centre square keeps the box centred on the word, bottom-middle lines the box's bottom edge up with the bottom of the text so padding only grows it upwards and sideways, top-left pins the top and left edges, and so on. Slide between words sets how long the box takes to travel to the next word — 0 jumps straight there. Lingering glow lets the highlight fade off the word you just read instead of vanishing. Box glows leaves a copy of the box (fill, and border if it's on) behind; Word glows lets the word's colour and brightness ease back to normal the same way (bold snaps off). Either one drops straight to Glow starts at, then fades out over Glow fades over — 50% over 200 ms is a soft afterimage, 100% over 100 ms a quick full-strength flicker.</p>
       </div>
     </div>
 
@@ -2182,7 +2187,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     riseDir:'up', riseGap:0, riseAnchor:53, riseFocus:true, riseMotion:'glide', pageWords:270, riseWordFocus:true,
     emText:true, emColor:'#f50000', emStrength:100, emBold:true,
     emBox:false, emBoxColor:'#f5a623', emBoxAlpha:35, emPad:8, emAlign:'mc', emRadius:6,
-    emBorder:false, emBorderColor:'#ffffff', emBorderW:2, emBorderAlpha:100, emTrail:false, emTrailStart:50, emTrailMs:200, emShadow:false, emSlide:80,
+    emBorder:false, emBorderColor:'#ffffff', emBorderW:2, emBorderAlpha:100, emTrail:false, emTrailBox:true, emTrailText:false, emTrailStart:50, emTrailMs:200, emShadow:false, emSlide:80,
     voiceOn:false, voiceUnit:'word', voiceURI:'', voiceRate:1.4, voicePitch:1, voiceVol:100, voiceAuto:false, voiceSync:'queue', voiceMatch:false,
     riseDimMode:'fixed', riseFadeStart:0, riseFadeEnd:100, riseShift:0,
   };
@@ -4049,18 +4054,34 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   // Colour strength: 0 = the normal text colour, 1 = the full highlight colour.
   function mixHex(a,b,t){ const A=hexRgb(a), B=hexRgb(b); return 'rgb('+A.map((v,k)=>Math.round(v+(B[k]-v)*t)).join(',')+')'; }
   function rgbaHex(h,a){ const c=hexRgb(h); return 'rgba('+c[0]+','+c[1]+','+c[2]+','+a+')'; }
-  function unstyleEmSpan(i){
+  function unstyleEmSpan(i, linger){
     const sp=(i!=null)&&scrubSpans[i];
     if(!sp) return;
+    clearTimeout(sp.__fadeT); sp.style.removeProperty('transition');
     sp.style.fontWeight=''; sp.style.color='';
+    let target=null;
     if(cfg.mode==='rise'){                      // drop back to whatever its line says it should be
       const keep=riseEmphasisIdx; riseEmphasisIdx=null;
       const f=scrubSpans.__focus!==undefined ? scrubSpans.__focus : index;
-      const s0=chunkStart(f); sp.style.opacity=String(riseOpacity(i, s0, s0+chunkLenAt(f)-1));
+      const s0=chunkStart(f); target=riseOpacity(i, s0, s0+chunkLenAt(f)-1);
+      sp.style.opacity=String(target);
       riseEmphasisIdx=keep;
+    }
+    // Word glows: start part-way back towards the highlight, then ease to normal.
+    const start=Math.max(0,Math.min(100,cfg.emTrailStart))/100, ms=Math.max(0,cfg.emTrailMs);
+    if(linger && cfg.emTrail && cfg.emTrailText && start>0 && ms>0 && !reduceMotion && target!=null){
+      sp.style.opacity=String(target+(1-target)*start);
+      if(cfg.emText) sp.style.color=mixHex(cfg.fg, cfg.emColor, start*Math.max(0,Math.min(100,cfg.emStrength))/100);
+      void sp.offsetWidth;
+      // the stage turns span transitions off with !important, so this one has to be too
+      sp.style.setProperty('transition', 'color '+ms+'ms linear, opacity '+ms+'ms linear', 'important');
+      sp.style.opacity=String(target);
+      if(cfg.emText) sp.style.color=cfg.fg;
+      sp.__fadeT=setTimeout(()=>{ if(scrubSpans[i]===sp && riseEmphasisIdx!==i){ sp.style.removeProperty('transition'); sp.style.color=''; } }, ms+60);
     }
   }
   function styleEmSpan(sp){
+    clearTimeout(sp.__fadeT); sp.style.removeProperty('transition');
     sp.style.opacity='1';
     sp.style.fontWeight = cfg.emBold ? '700' : '';
     sp.style.color = cfg.emText ? mixHex(cfg.fg, cfg.emColor, Math.max(0,Math.min(100,cfg.emStrength))/100) : '';
@@ -4083,7 +4104,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
   // Leave a fading copy of the box on the word it is leaving.
   function spawnEmGhost(){
-    if(!cfg.emBox || !cfg.emTrail) return;
+    if(!cfg.emBox || !cfg.emTrail || !cfg.emTrailBox) return;
     const b=emBoxEl(false);
     if(!b || b.style.opacity!=='1' || !b.parentNode) return;
     const start=Math.max(0,Math.min(100,cfg.emTrailStart))/100, ms=Math.max(0,cfg.emTrailMs);
@@ -4125,7 +4146,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   }
   function setRiseEmphasis(i){
     if(i===riseEmphasisIdx) return;
-    unstyleEmSpan(riseEmphasisIdx);           // leave the box showing so it can slide across
+    unstyleEmSpan(riseEmphasisIdx, true);     // leave the box showing so it can slide across
     riseEmphasisIdx=null;
     const sp=scrubSpans[i];
     if(!sp){ hideEmBox(); return; }
@@ -4185,7 +4206,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       if(advanced){
         ensureFlowWin(index);
         setScrubFocus(index, true);
-        unstyleEmSpan(riseEmphasisIdx); riseEmphasisIdx=null;   // box stays, so it can glide/glow into the new line
+        unstyleEmSpan(riseEmphasisIdx, true); riseEmphasisIdx=null;   // box stays, so it can glide/glow into the new line
         setPos(index+1); progBar.style.width=((index+1)/words.length*100)+'%'; updateShuttle();
       } else if(cfg.mode==='rise' && cfg.riseDimMode==='fade'){
         paintRiseFade();
@@ -5348,6 +5369,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   bindOnOff('emBorderSeg','emborder','emBorder');
   bindOnOff('emShadowSeg','emshadow','emShadow');
   bindOnOff('emTrailSeg','emtrail','emTrail');
+  ['emTrailBox','emTrailText'].forEach(id=> $('#'+id).addEventListener('change', e=>{ cfg[id]=e.target.checked; }));
   ['emColor','emBoxColor','emBorderColor'].forEach(id=>{
     $('#'+id).addEventListener('input', e=>{ cfg[id]=e.target.value; refreshEmphasis(); });
   });
@@ -5689,6 +5711,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     setSeg('emBorderSeg','emborder',cfg.emBorder?'on':'off');
     setSeg('emShadowSeg','emshadow',cfg.emShadow?'on':'off');
     setSeg('emTrailSeg','emtrail',cfg.emTrail?'on':'off');
+    $('#emTrailBox').checked=cfg.emTrailBox!==false; $('#emTrailText').checked=!!cfg.emTrailText;
     setRange('emBorderAlpha',cfg.emBorderAlpha, v=>v+'%');
     setRange('emTrailStart',cfg.emTrailStart, v=>v+'%');
     setRange('emTrailMs',cfg.emTrailMs, v=>v+' ms');
