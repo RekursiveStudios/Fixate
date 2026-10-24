@@ -9,7 +9,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Fixate v1.77</title>
+<title>Fixate v1.78</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
@@ -1276,7 +1276,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <button class="icon-btn js-back" title="Edit text">
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
     </button>
-    <span class="app-title">Fixate <i>v1.77</i></span>
+    <span class="app-title">Fixate <i>v1.78</i></span>
     <div class="pos"><span class="js-pg" hidden></span><b class="js-pos-now">1</b><span>/</span><span class="js-pos-total">0</span></div>
   </div>
   <div class="drawer-head">
@@ -1652,6 +1652,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
           <div class="seg" id="riseMotionSeg">
             <button data-rmotion="glide" class="on amber">Step</button>
             <button data-rmotion="flow">Continuous</button>
+            <button data-rmotion="steady">Steady</button>
           </div>
         </div>
         <div class="field">
@@ -1703,7 +1704,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
             <input type="number" class="v-edit" id="riseAnchorEdit" step="1" value="50">
           </div>
         </div>
-        <p class="hint">Step holds the focus word still on the anchor for most of its beat, then slides the column up by one line — Glide time (above) is how long that slide takes and Easing shapes it, so a short glide feels like a flick and a long one runs almost continuously. The slide is capped at 60% of a word's beat, so there is always a rest: at 500 wpm a word lasts 120 ms, which caps the slide near 72 ms however high the slider goes. Continuous never stops: the column drifts at a steady rate and the focus word passes the anchor as its beat runs out.</p>
+        <p class="hint">Step holds the focus word still on the anchor for most of its beat, then slides the column up by one line — Glide time (above) is how long that slide takes and Easing shapes it, so a short glide feels like a flick and a long one runs almost continuously. The slide is capped at 60% of a word's beat, so there is always a rest: at 500 wpm a word lasts 120 ms, which caps the slide near 72 ms however high the slider goes. Continuous never stops: the column drifts at a steady rate and the focus word passes the anchor as its beat runs out. Steady goes one further: the column scrolls at an even speed — the average pace of the text coming up — while the word highlight (Highlight tab) keeps its own rhythm, holding each word for its letter- or syllable-weighted time. The highlighted word floats a little above or below the anchor as long and short words go by, and the scroll gently speeds up or eases off to keep it close.</p>
         <p class="hint">Side words sets how bright the lines around the focus are. Fixed holds them all at that one brightness; Fade out starts them there and dims them towards the edges — Fade starts at is how far from the focus line the dimming begins, and Gone by is where they hit nothing, both measured as a percentage of the gap between the focus line and the top or bottom of the reading area. Past 100% they never quite disappear. Drag the text sideways to move the column.</p>
         <p class="hint">With the pointer over the text: the wheel scrubs and pauses at once, Shift+wheel moves five words at a time, Ctrl+wheel turns a page (Ctrl+Shift+wheel steps a paragraph), and Alt+wheel pops a definition up beside the pointer, and Alt+click (or D) opens the full entry with every sense and its related words. Middle-click plays or pauses.</p>
         <p class="hint">Rise is Flow turned upright: one chunk per line, scrolling continuously past a fixed anchor. Up sends finished words off the top (new text rises from the bottom); Down reverses it, with the text you have not read yet waiting above. Line spacing sets the gap between lines, anchor height sets how far down the screen the focus line sits — low anchor leaves more of what is coming in view. Alignment (Text tab) still decides centred or left-anchored, and words per flash puts two or three words on a line.</p>
@@ -4050,6 +4051,33 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     return Math.min(60, Math.ceil(stage.clientWidth/per) + 6);
   }
   let flowAcc=0, flowLast=0, flowRaf=null;
+  // ---------- Rise "Steady" movement ----------
+  // The column scrolls at an even speed while the highlight keeps word rhythm.
+  // steadyPos is where the column is, in words (same units as index).
+  let steadyPos=null, steadyV=null;
+  const STEADY_SPAN=60, STEADY_BEHIND=20;  // words averaged to set the scroll speed, centred a little behind
+  const STEADY_EASE_MS=1500;               // how quickly the speed follows a change in pace
+  function steadyRate(at){                 // words per ms over the text around `at`
+    let j=chunkStart(Math.max(0, Math.min(words.length-1, at-STEADY_BEHIND))), w=0, ms=0;
+    while(w<STEADY_SPAN && j<words.length){ const n=chunkLenAt(j); ms+=chunkCycle(j); w+=n; j+=n; }
+    return ms>0 ? w/ms : 0;
+  }
+  function steadyStep(dt, D){
+    const N=chunkN();
+    const readPos = index + chunkLenAt(index)*Math.min(1, flowAcc/D);   // where the reading is, in words
+    if(steadyPos==null) steadyPos=readPos;
+    const lag = (readPos-steadyPos)/N;                                  // in lines; + means the column is behind
+    const corr = Math.max(0.5, Math.min(1.6, 1 + 0.12*lag));            // gentle pull back towards the reading
+    const target = steadyRate(Math.floor(steadyPos))*corr;
+    steadyV = (steadyV==null) ? target : steadyV + (target-steadyV)*Math.min(1, dt/STEADY_EASE_MS);
+    steadyPos += dt*steadyV;
+    const p = Math.max(winStart, Math.min(winEnd, steadyPos));
+    const L0 = chunkStart(Math.floor(p)), L1 = L0+N;
+    const a=Lmap[L0], b=(Lmap[L1]!==undefined ? Lmap[L1] : a);
+    if(a===undefined) return;
+    const fr=frames[curFrame]; fr.style.transition='none';
+    setFramePos(fr, a+(b-a)*Math.min(1,(p-L0)/N));
+  }
   // ---------- Rise word-by-word emphasis (multi-word lines) ----------
   // When a Rise line holds 2+ words, each word gets its own slice of the
   // line's dwell time — sized the same letter/syllable-weighted way Flash
@@ -4242,6 +4270,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     tickRamp();
     ensureFlowWin(index);
     setScrubFocus(index, true);
+    steadyPos=null; steadyV=null;
     clearRiseEmphasis();
     if(riseWordFocusActive()) setRiseEmphasis(chunkStart(index));
     setPos(index+1); progBar.style.width=((index+1)/words.length*100)+'%'; updateShuttle();
@@ -4273,11 +4302,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       if(riseWordFocusActive()){ setRiseEmphasis(chunkStart(index) + wordAtElapsed(index, flowAcc)); keepEmBoxFitted(); }
       else if(riseEmphasisIdx!=null) clearRiseEmphasis();
       if(emFades.size || emGhosts.length) tickEmFades();   // after anything above that repaints opacity
-      const next=index+chunkLenAt(index);
-      const a=Lmap[index], b=(Lmap[next]!==undefined?Lmap[next]:a);
-      if(a!==undefined){
-        const fr=frames[curFrame]; fr.style.transition='none';
-        setFramePos(fr, a+(b-a)*travelFrac(flowAcc, D));
+      if(cfg.mode==='rise' && cfg.riseMotion==='steady'){ steadyStep(dt, D); }
+      else {
+        const next=index+chunkLenAt(index);
+        const a=Lmap[index], b=(Lmap[next]!==undefined?Lmap[next]:a);
+        if(a!==undefined){
+          const fr=frames[curFrame]; fr.style.transition='none';
+          setFramePos(fr, a+(b-a)*travelFrac(flowAcc, D));
+        }
       }
       flowRaf=requestAnimationFrame(step);
     };
